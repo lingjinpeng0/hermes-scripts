@@ -1,12 +1,28 @@
 #!/usr/bin/env python3
-import urllib.request
-url = "https://60s.viki.moe/v2/60s?encoding=text"
-req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-try:
-    with urllib.request.urlopen(req, timeout=15) as r:
-        text = r.read().decode('utf-8')
-        # 去掉微语行
-        lines = [l for l in text.split('\n') if not l.strip().startswith('【微语】')]
-        print('\n'.join(lines).strip())
-except Exception as e:
-    print(f"[60s每日新闻] 请求失败: {e}")
+"""60s每日新闻 — cron 版（多实例 fallback + HTTP 状态校验 + 重试）
+
+公共逻辑见 news_common.py。旧备用镜像 60s.7se.cn 忽略 encoding 参数、永远返回
+JSON，这里的 fmt 会把那种 JSON 拆成正常文本，避免推出一坨原始 JSON。
+"""
+import json
+import sys
+
+from news_common import format_list, run
+
+
+def fmt(body):
+    if body.lstrip().startswith("{"):
+        try:
+            d = json.loads(body)
+            items = d.get("data") or []
+            items = [i if isinstance(i, str) else i.get("title", "") for i in items]
+            title = d.get("title", "每天60秒知天下")
+            return title + "\n\n" + "\n".join(items)
+        except Exception:
+            return format_list(body, "每天60秒知天下")
+    lines = [l for l in body.split("\n") if not l.strip().startswith("【微语】")]
+    return "\n".join(lines).strip()
+
+
+if __name__ == "__main__":
+    sys.exit(run("60s每日新闻", "/v2/60s?encoding=text", fmt))
