@@ -2,8 +2,8 @@
 """雪乃的记忆备份 —— 只备份真正'是她'的那部分，不碰缓存和日志。
 
 用法:
-    python hermes_backup.py            # 打包 + 有手机就推一份
-    python hermes_backup.py --local    # 只打包
+    python hermes_backup.py            # 打包到 ~/Documents/Hermes备份
+    python hermes_backup.py --phone    # 顺便推一份到手机
 
 备份内容: memories/ sessions/ skills/ cron/ config.yaml SOUL.md .env channel_directory.json auth.json
 排除: cache/ logs/ backups/ image_cache/ 以及所有 zip/venv
@@ -17,7 +17,7 @@ import datetime
 
 HOME = os.path.expanduser(r"~\AppData\Local\hermes")
 ADB = os.path.join(HOME, "tools", "platform-tools", "adb.exe")
-OUT_DIR = os.path.join(HOME, "backups")
+OUT_DIR = os.path.expanduser(r"~\Documents\Hermes备份")
 PHONE_DIR = "/sdcard/hermes-backup"
 KEEP = 7
 
@@ -145,5 +145,5 @@ def prune_local():
 if __name__ == "__main__":
     z = build()
     prune_local()
-    if "--local" not in sys.argv:
+    if "--phone" in sys.argv:
         push(z)
